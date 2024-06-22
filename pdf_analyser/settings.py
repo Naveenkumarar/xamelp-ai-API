@@ -27,7 +27,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = os.environ.get("SECRET_KEY")
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG =  config('debug')
+debug =  int(config('debug'))
 
 ALLOWED_HOSTS = ["xamelp-ai-23b4a057083f.herokuapp.com","127.0.0.1"]
 
@@ -79,7 +79,8 @@ WSGI_APPLICATION = 'pdf_analyser.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/5.0/ref/settings/#databases
 
-if DEBUG:
+if debug == 1:
+    DEBUG = True
     DATABASES = {
         "default": {
             "ENGINE": "django.db.backends.postgresql",
@@ -90,6 +91,7 @@ if DEBUG:
         }
     }
 else:
+    DEBUG = False
     db_from_env = dj_database_url.config(conn_max_age=600)
     DATABASES = {'default':db_from_env}
 
