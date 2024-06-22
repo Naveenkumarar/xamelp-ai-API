@@ -3,3 +3,5 @@
 .my_pgpass
 .DS_store
 .gitignore
+media
+pdf_admin/migrations

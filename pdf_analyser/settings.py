@@ -24,7 +24,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 
 # SECURITY WARNING: keep the secret key used in production secret!
 # SECRET_KEY = 'django-insecure-_tr=+8=6c(f0ayxssk-#ai35#zuy083+d#j_nwj+_5sns1&e5g'
-SECRET_KEY = os.environ.get("SECRET_KEY")
+
 
 # SECURITY WARNING: don't run with debug turned on in production!
 debug =  int(config('debug'))
@@ -80,6 +80,7 @@ WSGI_APPLICATION = 'pdf_analyser.wsgi.application'
 # https://docs.djangoproject.com/en/5.0/ref/settings/#databases
 
 if debug == 1:
+    SECRET_KEY = 'django-insecure-_tr=+8=6c(f0ayxssk-#ai35#zuy083+d#j_nwj+_5sns1&e5g'
     DEBUG = True
     DATABASES = {
         "default": {
@@ -91,6 +92,7 @@ if debug == 1:
         }
     }
 else:
+    SECRET_KEY = os.environ.get("SECRET_KEY")
     DEBUG = False
     db_from_env = dj_database_url.config(conn_max_age=600)
     DATABASES = {'default':db_from_env}
