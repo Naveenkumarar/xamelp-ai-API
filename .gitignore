@@ -1,3 +1,5 @@
 .env
 .penv
 .my_pgpass
+.DS_store
+.gitignore
