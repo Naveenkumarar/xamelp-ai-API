@@ -6,6 +6,12 @@ from langchain.text_splitter import CharacterTextSplitter
 from django.views.decorators.csrf import csrf_exempt
 from django.http import JsonResponse
 from .models import *
+debug =  int(config('debug'))
+
+if debug == 1:
+    MEDIA_URL = 'media/'
+else: 
+    MEDIA_URL = '/mediadata/'
 
 def get_pdf_text(pdf_doc): 
     text = ""
@@ -227,7 +233,7 @@ def ask_question(request):
         convo_data = list(Coversation.objects.filter(name=name).values())
         if len(convo_data)==0:
             return JsonResponse({"status":False,"data":"No pdf found"})
-        pdf_path = 'media/'+convo_data[0]['pdf']
+        pdf_path = MEDIA_URL+convo_data[0]['pdf']
         
         chat = list(Chats.objects.filter(name=convo_data[0]['id']).order_by('timestamp').values())
         if len(chat)==0:
@@ -258,7 +264,7 @@ def get_mcq(request):
         convo_data = list(Coversation.objects.filter(name=name).values())
         if len(convo_data)==0:
             return JsonResponse({"status":False,"data":"No pdf found"})
-        pdf_path = 'media/'+convo_data[0]['pdf']
+        pdf_path = MEDIA_URL+convo_data[0]['pdf']
         
         chat = list(Chats.objects.filter(name=convo_data[0]['id']).order_by('timestamp').values())
         if len(chat)==0:
