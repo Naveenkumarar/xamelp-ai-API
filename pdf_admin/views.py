@@ -5,18 +5,7 @@ from PyPDF2 import PdfReader
 from langchain.text_splitter import CharacterTextSplitter
 from django.views.decorators.csrf import csrf_exempt
 from django.http import JsonResponse
-from langchain.embeddings import OpenAIEmbeddings
-from langchain.vectorstores import FAISS
-from langchain.memory import ConversationBufferMemory, ChatMessageHistory
-from langchain.chains import ConversationalRetrievalChain
-from langchain.chat_models import ChatOpenAI
 from .models import *
-
-openai_api_key = config('openai_api_key')
-
-import os
-os.environ["OPENAI_API_KEY"] = openai_api_key
-llm = ChatOpenAI(model="gpt-4")
 
 def get_pdf_text(pdf_doc): 
     text = ""
@@ -35,8 +24,48 @@ def get_text_chunks(text):
     chunks = text_splitter.split_text(text)
     return chunks
 
+
+@csrf_exempt
+def pdf_upload(request):
+    if request.method == "POST":
+        pdf = request.FILES.get('pdf')
+        name = request.POST.get("name")
+        
+        convo = Coversation.objects.create(name=name,pdf=pdf)
+        return JsonResponse({"status":True,"data":len(convo)})
+    
+def mcq_format(data):
+    datas=[]
+    questions = data.split("\n\n")
+    index = 0
+    print(len(questions))
+    while index < len(questions):
+        choice = questions[index].split("\n")
+        temp={}
+        temp["question"] = choice[0]
+        temp["options"] = choice[1:-1]
+        temp["answer"] = questions[index+1]
+        index = index+2
+        datas.append(temp)
+    return(datas)
+
+#####################LangChain Method#############################################
+'''
+from langchain.embeddings import OpenAIEmbeddings
+from langchain.vectorstores import FAISS
+from langchain.memory import ConversationBufferMemory, ChatMessageHistory
+from langchain.chains import ConversationalRetrievalChain
+from langchain.chat_models import ChatOpenAI
+
+
+openai_api_key = config('openai_api_key')
+
+import os
+os.environ["OPENAI_API_KEY"] = openai_api_key
+llm = ChatOpenAI(model="gpt-3.5-turbo")
+
 def get_vectorstore(text_chunks):
-    embeddings = OpenAIEmbeddings(openai_api_key=openai_api_key)
+    embeddings = OpenAIEmbeddings(openai_api_key=openai_api_key,model="text-embedding-3-small")
     # embeddings = HuggingFaceInstructEmbeddings(model_name="hkunlp/instructor-xl")
     vectorstore = FAISS.from_texts(texts=text_chunks, embedding=embeddings)
     return vectorstore
@@ -61,16 +90,6 @@ def get_conversation_chain(vectorstore,mem = None):
         )
     return conversation_chain
 
-@csrf_exempt
-def pdf_upload(request):
-    if request.method == "POST":
-        pdf = request.FILES.get('pdf')
-        name = request.POST.get("name")
-        
-        convo = Coversation.objects.create(name=name,pdf=pdf)
-        return JsonResponse({"status":True,"data":len(convo)})
-    
-from sys import getsizeof
 
 @csrf_exempt
 def ask_question(request):
@@ -146,6 +165,117 @@ def get_mcq(request):
         mcq_format(out[-1])
         return JsonResponse({"status":True,"data":out[-1]})
     
-def mcq_format(data):
-    datas = data.split("\n")
-    print(datas)
+'''
+
+
+################### OPEN AI Method #######################################################
+import numpy as np
+from sklearn.metrics.pairwise import cosine_similarity
+import openai
+
+openai.api_key  = config('openai_api_key')
+
+
+def get_text_embedding(text):
+    response = openai.embeddings.create(
+        model="text-embedding-3-small",
+        input=text
+    )
+    return np.array(response.data[0].embedding)
+
+def embed_pdf_text(pdf_path):
+    text = get_pdf_text(pdf_path)
+    text_chunks = get_text_chunks(text)
+    embeddings = [get_text_embedding(chunk) for chunk in text_chunks]
+    return text_chunks, embeddings
+
+def get_query_embedding(query):
+    return get_text_embedding(query)
+
+def find_most_relevant_chunks(query_embedding, text_embeddings, text_chunks, top_k=3):
+    similarities = cosine_similarity([query_embedding], text_embeddings)[0]
+    top_indices = similarities.argsort()[-top_k:][::-1]
+    relevant_chunks = [text_chunks[i] for i in top_indices]
+    return relevant_chunks
+
+def ask_openai_question(question, context,mem=[]):
+    messages = [
+        {"role": "user", "content": f"Context: {context}\n\nQuestion: {question}"}
+    ]
+    messages = mem+messages
+    response = openai.chat.completions.create(
+        model="gpt-3.5-turbo",
+        messages=messages,
+        # max_tokens=150
+    )
+    return response.choices[0].message.content.strip()
+
+def get_answer_from_pdf(pdf_path, question,memory=[]):
+    text_chunks, text_embeddings = embed_pdf_text(pdf_path)
+    query_embedding = get_query_embedding(question)
+    relevant_chunks = find_most_relevant_chunks(query_embedding, text_embeddings, text_chunks)
+    context = " ".join(relevant_chunks)
+    answer = ask_openai_question(question, context,memory)
+    return answer
+
+@csrf_exempt
+def ask_question(request):
+    if request.method == "GET":
+        question = request.GET.get('question')
+        name = request.GET.get('name')
+
+        convo_data = list(Coversation.objects.filter(name=name).values())
+        if len(convo_data)==0:
+            return JsonResponse({"status":False,"data":"No pdf found"})
+        pdf_path = 'media/'+convo_data[0]['pdf']
+        
+        chat = list(Chats.objects.filter(name=convo_data[0]['id']).order_by('timestamp').values())
+        if len(chat)==0:
+            memory = []
+        else:
+            memory = []
+            index=0
+            while index < len(chat):
+                memory.append({"role": "user", "content": chat[index]['message']})
+                memory.append({"role": "system", "content": chat[index+1]['message']})
+                index=index+2
+        
+
+        answer = get_answer_from_pdf(pdf_path, question,memory)
+
+        convo = Coversation.objects.get(name=name)
+        Chats.objects.create(name=convo,type="Human",message=question)
+        Chats.objects.create(name=convo,type="AI",message=answer)
+        return JsonResponse({"status":True,"data":answer})
+    
+@csrf_exempt
+def get_mcq(request):
+    if request.method == "GET":
+        count = request.GET.get('count')
+        name = request.GET.get('name')
+        question = f"give {count} mcq questions with answer without referring to any image or table"
+        
+        convo_data = list(Coversation.objects.filter(name=name).values())
+        if len(convo_data)==0:
+            return JsonResponse({"status":False,"data":"No pdf found"})
+        pdf_path = 'media/'+convo_data[0]['pdf']
+        
+        chat = list(Chats.objects.filter(name=convo_data[0]['id']).order_by('timestamp').values())
+        if len(chat)==0:
+            memory = []
+        else:
+            memory = []
+            index=0
+            while index < len(chat):
+                memory.append({"role": "user", "content": chat[index]['message']})
+                memory.append({"role": "system", "content": chat[index+1]['message']})
+                index=index+2
+        
+
+        answer = get_answer_from_pdf(pdf_path, question,memory)
+
+        convo = Coversation.objects.get(name=name)
+        Chats.objects.create(name=convo,type="Human",message=question)
+        Chats.objects.create(name=convo,type="AI",message=answer)
+        out = mcq_format(answer)
+        return JsonResponse({"status":True,"data":out})
