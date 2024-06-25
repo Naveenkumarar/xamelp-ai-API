@@ -32,7 +32,7 @@ def pdf_upload(request):
         name = request.POST.get("name")
         
         convo = Coversation.objects.create(name=name,pdf=pdf)
-        return JsonResponse({"status":True,"data":len(convo)})
+        return JsonResponse({"status":True,"data":"succesfully added"})
     
 def mcq_format(data):
     datas=[]
