@@ -104,7 +104,7 @@ else:
         'ENGINE': 'django.db.backends.postgresql_psycopg2',
         'NAME': 'pdf_db',
         'USER': 'admin',
-        'PASSWORD': '1997',
+        'PASSWORD': config("db_pass"),
         'HOST': 'localhost',
         'PORT': '5432',
     }
