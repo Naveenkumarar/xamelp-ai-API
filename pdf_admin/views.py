@@ -280,5 +280,5 @@ def get_mcq(request):
         convo = Coversation.objects.get(name=name)
         Chats.objects.create(name=convo,type="Human",message=question)
         Chats.objects.create(name=convo,type="AI",message=answer)
-        out = mcq_format(answer)
-        return JsonResponse({"status":True,"data":out})
+        # out = mcq_format(answer)
+        return JsonResponse({"status":True,"data":answer})
