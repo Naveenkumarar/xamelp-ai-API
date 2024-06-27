@@ -99,13 +99,13 @@ else:
     # DATABASES = {'default':db_from_env}
     DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.postgresql',
-        'HOST': 'localhost',
+        'ENGINE': 'django.db.backends.postgresql_psycopg2',
         'NAME': 'pdf_db',
-        'OPTIONS': {
-            "passfile": ".my_pgpass",
-        },
-    },
+        'USER': 'admin',
+        'PASSWORD': '1997',
+        'HOST': 'localhost',
+        'PORT': '5432',
+    }
 }
 
 
