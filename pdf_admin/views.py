@@ -37,19 +37,28 @@ def pdf_upload(request):
         convo = Coversation.objects.create(name=name,pdf=pdf)
         return JsonResponse({"status":True,"data":"succesfully added"})
     
-def mcq_format(data):
+def mcq_format(data,count):
     datas=[]
     questions = data.split("\n\n")
     index = 0
-    print(len(questions))
-    while index < len(questions):
-        choice = questions[index].split("\n")
-        temp={}
-        temp["question"] = choice[0]
-        temp["options"] = choice[1:-1]
-        temp["answer"] = questions[index+1]
-        index = index+2
-        datas.append(temp)
+    if(len(questions)== 2*count):
+        while index < len(questions):
+            choice = questions[index].split("\n")
+            temp={}
+            temp["question"] = choice[0]
+            temp["options"] = choice[1:-1]
+            temp["answer"] = questions[index+1]
+            index = index+2
+            datas.append(temp)
+    else:
+        while index < len(questions):
+            choice = questions[index].split("\n")
+            temp={}
+            temp["question"] = choice[0]
+            temp["options"] = choice[1:-2]
+            temp["answer"] = choice[-1]
+            index = index+1
+            datas.append(temp)
     return(datas)
 
 #####################LangChain Method#############################################
@@ -280,5 +289,5 @@ def get_mcq(request):
         convo = Coversation.objects.get(name=name)
         Chats.objects.create(name=convo,type="Human",message=question)
         Chats.objects.create(name=convo,type="AI",message=answer)
-        # out = mcq_format(answer)
-        return JsonResponse({"status":True,"data":answer})
+        out = mcq_format(answer,count)
+        return JsonResponse({"status":True,"data":out})
