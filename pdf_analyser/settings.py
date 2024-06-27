@@ -82,7 +82,14 @@ WSGI_APPLICATION = 'pdf_analyser.wsgi.application'
 if debug == 1:
     SECRET_KEY = 'django-insecure-_tr=+8=6c(f0ayxssk-#ai35#zuy083+d#j_nwj+_5sns1&e5g'
     DEBUG = True
-    DATABASES = {
+    
+else:
+    SECRET_KEY = os.environ.get("SECRET_KEY")
+    DEBUG = False
+    # db_from_env = dj_database_url.config(conn_max_age=600)
+    # DATABASES = {'default':db_from_env}
+
+DATABASES = {
         "default": {
             "ENGINE": "django.db.backends.postgresql",
             "OPTIONS": {
@@ -91,11 +98,6 @@ if debug == 1:
             },
         }
     }
-else:
-    SECRET_KEY = os.environ.get("SECRET_KEY")
-    DEBUG = False
-    db_from_env = dj_database_url.config(conn_max_age=600)
-    DATABASES = {'default':db_from_env}
 
 # Password validation
 # https://docs.djangoproject.com/en/5.0/ref/settings/#auth-password-validators
