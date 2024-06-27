@@ -8,10 +8,7 @@ from django.http import JsonResponse
 from .models import *
 debug =  int(config('debug'))
 
-if debug == 1:
-    MEDIA_URL = 'media/'
-else: 
-    MEDIA_URL = 'mediadata/'
+MEDIA_URL = 'media/'
 
 def get_pdf_text(pdf_doc): 
     text = ""
