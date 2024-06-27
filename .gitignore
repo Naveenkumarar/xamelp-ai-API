@@ -5,3 +5,6 @@
 .gitignore
 media
 pdf_admin/migrations
+pdf_admin/__pycache__
+mediadata
+pdf_analyser/__pycache__
