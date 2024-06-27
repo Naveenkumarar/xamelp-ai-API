@@ -29,7 +29,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # SECURITY WARNING: don't run with debug turned on in production!
 debug =  int(config('debug'))
 
-ALLOWED_HOSTS = ["xamelp-ai-23b4a057083f.herokuapp.com","127.0.0.1"]
+ALLOWED_HOSTS = ["ec2-18-221-156-209.us-east-2.compute.amazonaws.com","127.0.0.1"]
 
 
 # Application definition
@@ -78,6 +78,8 @@ WSGI_APPLICATION = 'pdf_analyser.wsgi.application'
 
 # Database
 # https://docs.djangoproject.com/en/5.0/ref/settings/#databases
+
+SECRET_KEY = 'django-insecure-_tr=+8=6c(f0ayxssk-#ai35#zuy083+d#j_nwj+_5sns1&e5g'
 
 if debug == 1:
     SECRET_KEY = 'django-insecure-_tr=+8=6c(f0ayxssk-#ai35#zuy083+d#j_nwj+_5sns1&e5g'
